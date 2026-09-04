@@ -28,6 +28,8 @@ export {
 	DEFAULT_CUSTOM_MESSAGE_TYPE,
 	LIVE_DELEGATION_MESSAGE_TYPE,
 	LIVE_ENDED_MESSAGE_TYPE,
+	CHANNEL_INCOMING_MESSAGE_TYPE,
+	type ChannelIncomingDetails,
 	type CustomMessageContent,
 	type CustomMessagePayload,
 	type NormalizedCustomMessagePayload,

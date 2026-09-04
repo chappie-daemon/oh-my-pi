@@ -27,6 +27,7 @@ import type { LateDiagnosticsFile } from "../../session/transcript/late-diagnost
 import {
 	ASYNC_NOTIFY_MESSAGE_TYPE,
 	type AsyncNotifyDetails,
+	CHANNEL_INCOMING_MESSAGE_TYPE,
 	type CustomMessage,
 } from "../../session/transcript/messages";
 import { imageContent, textContent } from "../../session/transcript/transcript-entry";
@@ -42,6 +43,7 @@ import {
 	type LaunchCompletionDetails,
 	ParentIrcMessage,
 } from "../../ui/transcript/messages/async-cards";
+import { ChannelIncoming } from "../../ui/transcript/messages/channel-message";
 import { FileMentions } from "../../ui/transcript/messages/file-mention";
 import { CustomMessageBlock, type FrameRenderer, HookMessageBlock } from "../../ui/transcript/messages/frame";
 import { LateDiagnostics } from "../../ui/transcript/messages/late-diagnostics";
@@ -190,6 +192,11 @@ function customFace(message: CustomOrHookMessage, env: MessageFaceEnv): MessageF
 	if (isIrcMessageType(customType)) {
 		return {
 			face: () => <IrcMessageBlock message={message} expanded={env.expanded} visible={env.activityVisible} />,
+		};
+	}
+	if (customType === CHANNEL_INCOMING_MESSAGE_TYPE) {
+		return {
+			face: () => <ChannelIncoming message={message} expanded={env.expanded} />,
 		};
 	}
 	if (customType === "advisor") {
