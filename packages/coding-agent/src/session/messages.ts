@@ -23,6 +23,8 @@ export {
 	VIBE_MODE_CONTEXT_MESSAGE_TYPE,
 	DEFAULT_CUSTOM_MESSAGE_TYPE,
 	LIVE_DELEGATION_MESSAGE_TYPE,
+	CHANNEL_INCOMING_MESSAGE_TYPE,
+	type ChannelIncomingDetails,
 	type CustomMessageContent,
 	type CustomMessagePayload,
 	type NormalizedCustomMessagePayload,
@@ -336,6 +338,7 @@ function normalizeSessionMessageForProviderReplay(message: AgentMessage): unknow
 			return normalizeProviderReplayValue(message);
 	}
 }
+
 
 /** Custom message type for hidden interrupted-thinking continuity context. */
 export const INTERRUPTED_THINKING_MESSAGE_TYPE = "interrupted-thinking";

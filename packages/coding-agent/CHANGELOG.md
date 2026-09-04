@@ -859,6 +859,9 @@
 ### Changed
 
 - Agent delegation is now model-aware, allowing some models to favor focused inline work instead of spawning subagents.
+### Added
+
+- Channel bridge plugins (NATS, Telegram, ...) can now inject inbound messages as `channel:incoming` custom messages that the transcript renders as a dedicated card - status line with the channel source, sender, and absolute receive timestamp, a body preview that collapses past three lines, and the full body plus every channel-specific attribute when expanded (ctrl+o) - instead of falling back to the generic custom-message frame. The model-visible message content is unchanged.
 
 ### Fixed
 

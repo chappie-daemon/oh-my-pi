@@ -5,14 +5,21 @@
  * here keeps the two byte-for-byte identical.
  */
 import type { AgentMessage } from "@oh-my-pi/pi-agent-core";
-import { type Component } from "../tui";
+import { type Component, visibleWidth } from "../tui";
 import { formatBytes, formatDuration } from "@oh-my-pi/pi-utils";
 import type { JobSnapshot } from "../tools/hub";
 import type { DaemonSnapshot } from "../tools/hub";
-import { type CustomMessage, type FileMentionMessage, resolveAbortLabel, shouldRenderAbortReason } from "./messages";
+import {
+	type ChannelIncomingDetails,
+	type CustomMessage,
+	type FileMentionMessage,
+	resolveAbortLabel,
+	shouldRenderAbortReason,
+} from "./messages";
 import { createIrcMessageCard } from "../tools/hub";
 import { formatArtifactErrorNotice, type OutputMeta } from "../tools/output-meta";
-import { replaceTabs, TRUNCATE_LENGTHS, truncateToWidth } from "../render/render-utils";
+import { createCachedComponent, replaceTabs, TRUNCATE_LENGTHS, truncateToWidth } from "../render/render-utils";
+import { outputBlockContentWidth, renderOutputBlock } from "../render/output-block";
 import { canonicalizeMessage } from "./thinking-display";
 import { ToolActivityContainer } from "../chrome/tool-activity";
 import { type TranscriptBlock } from "../chrome/transcript-container";
@@ -312,4 +319,69 @@ export function assistantUsageIsBilled(usage: AssistantAgentMessage["usage"]): b
 	if (usage.cacheRead > 0 || usage.cacheWrite > 0) return true;
 	if ((usage.premiumRequests ?? 0) > 0) return true;
 	return false;
+}
+
+/**
+ * Render a `channel:incoming` custom message (an inbound channel message from
+ * a bridge plugin: NATS, Telegram, ...) as a framed transcript card: the
+ * header bar names the channel source, sender, and absolute receive time; the
+ * body is quoted in full when short and previewed with a "+N more lines" hint
+ * when it would render taller than the collapsed budget; the expanded view
+ * shows the full body plus every details attribute.
+ */
+const CHANNEL_COLLAPSED_CHARS = 300;
+const CHANNEL_COLLAPSED_LINES = 3;
+
+function channelTimestamp(ts: number | undefined): string {
+	if (!ts) return "";
+	const date = new Date(ts);
+	const pad = (value: number): string => String(value).padStart(2, "0");
+	return `${pad(date.getDate())}/${pad(date.getMonth() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+export function buildChannelMessageCard(message: CustomOrHookMessage, getExpanded: () => boolean): Component {
+	const details = (message as CustomMessage<ChannelIncomingDetails>).details;
+	const source = details?.source?.trim() || "channel";
+	const sender = details?.fromName?.trim() || details?.from?.trim() || "?";
+	const body = details?.text ?? (typeof message.content === "string" ? message.content : "");
+	const stamp = channelTimestamp(message.timestamp);
+	return createCachedComponent(getExpanded, (width, expanded) => {
+		const contentWidth = outputBlockContentWidth(width, 1);
+		const rawLines = body.split("\n");
+		const renderedRows = rawLines.reduce(
+			(total, line) => total + Math.max(1, Math.ceil(visibleWidth(replaceTabs(line)) / Math.max(1, contentWidth))),
+			0,
+		);
+		const showFull = expanded || (renderedRows <= CHANNEL_COLLAPSED_LINES && body.length <= CHANNEL_COLLAPSED_CHARS);
+		let bodyLines: string[];
+		if (showFull) {
+			bodyLines = rawLines.map(line => replaceTabs(line));
+		} else {
+			bodyLines = rawLines
+				.slice(0, CHANNEL_COLLAPSED_LINES)
+				.map(line => truncateToWidth(replaceTabs(line), contentWidth));
+			const hidden = rawLines.length - CHANNEL_COLLAPSED_LINES;
+			if (hidden > 0) {
+				bodyLines.push(theme.fg("dim", `… +${hidden} more ${hidden === 1 ? "line" : "lines"}`));
+			}
+		}
+		const sections: Array<{ label?: string; lines: readonly string[] }> = [{ lines: bodyLines }];
+		if (expanded && details) {
+			const attributes = Object.entries(details)
+				// `text` is the body itself and is already rendered above.
+				.filter(([key, value]) => key !== "text" && value !== undefined && value !== "")
+				.map(([key, value]) => `${theme.fg("dim", `${key}:`)} ${theme.fg("muted", replaceTabs(String(value)))}`);
+			sections.push({ label: "attributes", lines: attributes });
+		}
+		return renderOutputBlock(
+			{
+				header: `${theme.icon.package} ${source} ${theme.nav.selected} ${sender}`,
+				headerMeta: stamp,
+				sections,
+				width,
+				applyBg: false,
+			},
+			theme,
+		);
+	});
 }
