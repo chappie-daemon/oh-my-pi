@@ -35,6 +35,29 @@ export const DEFAULT_CUSTOM_MESSAGE_TYPE = "custom-message";
 /** Custom message carrying a coding request delegated by the live voice model. */
 export const LIVE_DELEGATION_MESSAGE_TYPE = "live-delegation";
 
+/**
+ * Message type for incoming channel messages (NATS, Telegram, IRC-style
+ * bridges). Extensions inject these via `sendMessage` with the channel wire
+ * content in `content` (what the model sees) and structured routing metadata in
+ * `details` (what the transcript card renders). The card shows every
+ * `details` entry when expanded.
+ */
+export const CHANNEL_INCOMING_MESSAGE_TYPE = "channel:incoming";
+
+/** Metadata persisted with {@link CHANNEL_INCOMING_MESSAGE_TYPE} messages. */
+export interface ChannelIncomingDetails {
+	/** Channel plugin identifier, e.g. "nats", "telegram". */
+	source?: string;
+	/** Sender's stable agent/user id. */
+	from?: string;
+	/** Sender's friendly display name. */
+	fromName?: string;
+	/** Plain-text body for the card; `content` stays the model-visible form. */
+	text?: string;
+	/** Channel-specific attributes, rendered verbatim when expanded. */
+	[key: string]: unknown;
+}
+
 /** Content shape accepted for extension-injected messages. */
 export type CustomMessageContent = string | (TextContent | ImageContent)[];
 

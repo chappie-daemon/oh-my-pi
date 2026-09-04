@@ -21,6 +21,7 @@ import type { AssistantTextRenderer, MessageRenderer } from "./extension-types";
 import { LAUNCH_COMPLETION_MESSAGE_TYPE } from "./messages";
 import {
 	BACKGROUND_TAN_DISPATCH_MESSAGE_TYPE,
+	CHANNEL_INCOMING_MESSAGE_TYPE,
 	type CustomMessage,
 	isUserTurnInitiator,
 	LSP_LATE_DIAGNOSTIC_MESSAGE_TYPE,
@@ -38,6 +39,7 @@ import {
 	assistantHasVisibleContent,
 	assistantUsageIsBilled,
 	buildAsyncResultComponent,
+	buildChannelMessageCard,
 	buildFileMentionBlock,
 	buildIrcMessageCard,
 	buildLaunchCompletionBlock,
@@ -609,6 +611,10 @@ export class ChatTranscriptBuilder {
 	}
 	#appendCustomMessage(message: Extract<AgentMessage, { role: "custom" | "hookMessage" }>): void {
 		if (!message.display) return;
+		if (message.customType === CHANNEL_INCOMING_MESSAGE_TYPE) {
+			this.container.addChild(buildChannelMessageCard(message, () => this.#expanded));
+			return;
+		}
 		if (message.customType === "async-result") {
 			const renderer = this.#deps.getMessageRenderer?.(message.customType);
 			const component = buildAsyncResultComponent(message, renderer);

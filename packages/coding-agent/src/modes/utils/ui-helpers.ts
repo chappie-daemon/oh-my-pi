@@ -78,6 +78,7 @@ import { extractVisibleAssistantText } from "../rpc/rpc-live";
 import { LAUNCH_COMPLETION_MESSAGE_TYPE } from "../../session/launch-completion";
 import {
 	BACKGROUND_TAN_DISPATCH_MESSAGE_TYPE,
+	CHANNEL_INCOMING_MESSAGE_TYPE,
 	type CustomMessage,
 	isUserTurnInitiator,
 	LSP_LATE_DIAGNOSTIC_MESSAGE_TYPE,
@@ -99,6 +100,7 @@ import {
 	assistantUsageIsBilled,
 	buildAsyncResultComponent,
 	buildFileMentionBlock,
+	buildChannelMessageCard,
 	buildIrcMessageCard,
 	buildLaunchCompletionBlock,
 	normalizeToolArgs,
@@ -368,6 +370,11 @@ export class UiHelpers {
 						component.setExpanded(this.ctx.toolOutputExpanded);
 						this.ctx.chatContainer.addChild(component);
 						break;
+					}
+					if (message.customType === CHANNEL_INCOMING_MESSAGE_TYPE) {
+						const card = buildChannelMessageCard(message, () => this.ctx.toolOutputExpanded);
+						this.ctx.chatContainer.addChild(card);
+						return [card];
 					}
 					if (
 						message.customType === "irc:incoming" ||
