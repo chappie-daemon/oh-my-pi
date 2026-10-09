@@ -13,7 +13,13 @@ import type { HindsightSessionState } from "../hindsight/state";
 import type { MnemopiSessionState } from "../mnemopi/state";
 import type { AgentSession } from "../session/agent-session";
 
-export type MemoryBackendId = "off" | "local" | "hindsight" | "mnemopi" | "sharpshooter";
+/**
+ * Id of the active backend. The named members are the built-in backends; the
+ * `(string & {})` arm is the documented escape hatch for a backend loaded from
+ * outside this repository (`OMP_MEMORY_BACKEND_MODULE`), which reports its own
+ * id without every consumer needing a new case.
+ */
+export type MemoryBackendId = "off" | "local" | "hindsight" | "mnemopi" | "sharpshooter" | (string & {});
 
 export interface MemoryBackendStatus {
 	backend: MemoryBackendId;
