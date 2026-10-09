@@ -1,4 +1,5 @@
 import type { Settings } from "../config/settings";
+import { resolveExternalMemoryBackend } from "./external-backend";
 import { localBackend } from "./local-backend";
 import { offBackend } from "./off-backend";
 import type { MemoryBackend } from "./types";
@@ -10,6 +11,7 @@ import { cfgMemoryBackend } from "./settings";
  *
  * Selection rules (single source of truth — every memory consumer routes
  * through this):
+ *   - `OMP_MEMORY_BACKEND_MODULE` set     → the external module it names
  *   - `memory.backend === "hindsight"`  → Hindsight remote memory
  *   - `memory.backend === "mnemopi"`  → local Mnemopi SQLite memory
  *   - `memory.backend === "sharpshooter"` → friction-gated project decision memory
@@ -20,6 +22,11 @@ import { cfgMemoryBackend } from "./settings";
  * a config is loaded, `memory.backend` is the sole runtime selector.
  */
 export async function resolveMemoryBackend(settings: Settings): Promise<MemoryBackend> {
+	// Before the settings chain: an external module is selected by the
+	// environment, so it is honoured while `memory.backend` stays at its default
+	// `off` and the harness setting is left untouched.
+	const external = await resolveExternalMemoryBackend();
+	if (external) return external;
 	const id = cfgMemoryBackend.get(settings);
 	if (id === "hindsight") return (await import("../hindsight/backend")).hindsightBackend;
 	if (id === "mnemopi") return (await import("../mnemopi/backend")).mnemopiBackend;
