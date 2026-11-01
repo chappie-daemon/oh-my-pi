@@ -1382,6 +1382,12 @@ export async function createSessionManager(
 	// resume carries in. `--continue`/`--resume` still resume deliberately from
 	// any mode.
 	const interactive = options.interactive ?? (!parsed.print && parsed.mode === undefined);
+	// A one-line diagnostic, and the string the build probes for: this patch adds
+	// no user-visible text of its own, so without it a build that silently lost
+	// this patch would look exactly like a good one (containers/scripts/omp-build).
+	if (process.env.OMP_DEBUG_AUTORESUME === "1" && parsed.goal === undefined && !interactive) {
+		console.error("auto-resume: skipped in a non-interactive run");
+	}
 	// An explicit startup goal starts fresh even when implicit auto-resume is configured.
 	if (parsed.goal === undefined && interactive && cfgAutoResume.get(activeSettings)) {
 		const manager = await forkIfMovedAway(
